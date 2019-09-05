@@ -125,7 +125,7 @@ namespace Penguin.Reflection.Serialization.XML
 
             if (Options.StartNode != null)
             {
-                reader.AdvancePast(Options.StartNode);
+                reader.AdvancePast("<" + Options.StartNode);
             }
 
             reader.AdvancePast(">");
@@ -157,9 +157,14 @@ namespace Penguin.Reflection.Serialization.XML
                 }
 
 
-                if (props.TryGetValue(propName, out PropertyInfo pInfo))
+                if (propName[propName.Length - 1] == '/') {
+                    //self closing, skip
+                } else if (props.TryGetValue(propName, out PropertyInfo pInfo))
                 {
                     pInfo.SetValue(o, GetValue(pInfo.PropertyType, reader));
+                } else
+                {
+                    reader.AdvancePast($"/{propName}>");
                 }
             }
 
