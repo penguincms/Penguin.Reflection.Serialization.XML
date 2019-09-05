@@ -6,13 +6,13 @@ using System.Text;
 
 namespace Penguin.Reflection.Serialization.XML
 {
-    public static class StringReaderExtensions
+    public static class TextReaderExtensions
     {
-        public static void AdvancePast(this StringReader reader, string s)
+        public static void AdvancePast(this TextReader reader, string s)
         {
             char[] cbuff = new char[s.Length];
 
-            while (!cbuff.SequenceEqual(s))
+            while (!cbuff.SequenceEqual(s) && cbuff[0] != -1)
             {
                 for (int i = 1; i < cbuff.Length; i++)
                 {
@@ -23,7 +23,7 @@ namespace Penguin.Reflection.Serialization.XML
             }
         }
 
-        public static void AdvancePast(this StringReader reader, char c)
+        public static void AdvancePast(this TextReader reader, char c)
         {
             while(reader.Read() != c)
             {

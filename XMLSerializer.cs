@@ -1,6 +1,7 @@
 ﻿using Penguin.Reflection.Extensions;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -12,11 +13,55 @@ namespace Penguin.Reflection.Serialization.XML
 {
     public class XMLSerializer
     {
-        XMLDeserializerOptions Options { get; set; }
-        public XMLSerializer()
+        Dictionary<Type, Dictionary<string, PropertyInfo>> PropertyCache { get; set; } = new Dictionary<Type, Dictionary<string, PropertyInfo>>();
+        
+        public void SetProperties(Type t, IEnumerable<PropertyInfo> properties)
         {
-            Options = new XMLDeserializerOptions();
+            if (PropertyCache.ContainsKey(t))
+            {
+                PropertyCache.Remove(t);
+            }
+
+            _SetProperties(t, properties);
         }
+
+        private void _SetProperties(Type t, IEnumerable<PropertyInfo> properties)
+        {
+            Dictionary<string, PropertyInfo> props;
+
+            if (Options.CaseSensitive)
+            {
+                props = new Dictionary<string, PropertyInfo>();
+            } else
+            {
+                props = new Dictionary<string, PropertyInfo>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            foreach (PropertyInfo p in properties)
+            {
+                props.Add(p.Name, p);
+            }
+
+            PropertyCache.Add(t, props);
+        }
+
+        Dictionary<string, PropertyInfo> GetProperties(Type t)
+        {
+            if (PropertyCache.TryGetValue(t, out Dictionary<string, PropertyInfo> props))
+            {
+                return props;
+            }
+            else
+            {
+                _SetProperties(t, t.GetProperties());
+                return PropertyCache[t];
+            }
+        }
+        XMLDeserializerOptions Options { get; set; }
+        public XMLSerializer() : this(new XMLDeserializerOptions())
+        {
+        }
+
         public XMLSerializer(XMLDeserializerOptions options)
         {
             Options = options;
@@ -27,7 +72,7 @@ namespace Penguin.Reflection.Serialization.XML
 
             if (sb is null)
             {
-                sb = new StringBuilder();
+                sb = new StringBuilder(200);
             }
 
             foreach (PropertyInfo pInfo in Source.GetType().GetProperties())
@@ -43,16 +88,24 @@ namespace Penguin.Reflection.Serialization.XML
             return sb.ToString();
         }
 
-        public  (string propName, char lastChar) GetNextPropertyName(StringReader reader)
+        public  (string propName, char lastChar) GetNextPropertyName(TextReader reader)
         {
-            StringBuilder s = new StringBuilder();
+            StringBuilder s = new StringBuilder(20);
 
             char c = (char)reader.Read();
 
             
             while(!char.IsWhiteSpace(c) && c != '>')
             {
-                s.Append(c);
+                if (c == '-')
+                {
+                    s.Append('_');
+                }
+                else
+                {
+                    s.Append(c);
+                }
+
                 c = (char)reader.Read();
             }
 
@@ -60,16 +113,15 @@ namespace Penguin.Reflection.Serialization.XML
             return (s.ToString(), c);
         }
 
-        //XML Serializers suck. 
-        public T DeserializeObject<T>(string Xml)
+        public T DeserializeObject<T>(TextReader reader) where T : class
         {
-            StringReader reader = new StringReader(Xml);
-
+            if((reader as System.IO.StreamReader).BaseStream.Position == (reader as System.IO.StreamReader).BaseStream.Length){
+                return null;
+            }
 
             T o = Activator.CreateInstance<T>();
 
-            PropertyInfo[] props = o.GetType().GetProperties();
-
+            Dictionary<string, PropertyInfo> props = GetProperties(o.GetType());
 
             if (Options.StartNode != null)
             {
@@ -93,12 +145,11 @@ namespace Penguin.Reflection.Serialization.XML
 
                 (string propName, char lastChar) = GetNextPropertyName(reader);
 
-                if(propName[0] == '/')
+                if (propName[0] == '/')
                 {
                     return o;
                 }
 
-                PropertyInfo pInfo = props.FirstOrDefault(p => isNameEqual(propName, p.Name));
 
                 if (lastChar != '>')
                 {
@@ -106,21 +157,23 @@ namespace Penguin.Reflection.Serialization.XML
                 }
 
 
-                if (pInfo != null)
+                if (props.TryGetValue(propName, out PropertyInfo pInfo))
                 {
                     pInfo.SetValue(o, GetValue(pInfo.PropertyType, reader));
                 }
             }
 
-            return o;
+            return null;
         }
-
-        private bool isNameEqual(string XEName, string PName)
+        //XML Serializers suck. 
+        public T DeserializeObject<T>(string Xml) where T : class
         {
-            return string.Equals(XEName.Replace("-", "_"), PName, Options.NameComparisonType);
+            StringReader reader = new StringReader(Xml);
+
+            return DeserializeObject<T>(reader);
         }
 
-        private object GetValue(Type pType, StringReader reader, char lastChar = ' ')
+        private object GetValue(Type pType, TextReader reader, char lastChar = ' ')
         {
             char c = lastChar;
 
@@ -137,7 +190,7 @@ namespace Penguin.Reflection.Serialization.XML
 
                     c = (char)reader.Read();
 
-                    StringBuilder toReturn = new StringBuilder();
+                    StringBuilder toReturn = new StringBuilder(25);
 
                     while(c != '<')
                     {
@@ -153,8 +206,7 @@ namespace Penguin.Reflection.Serialization.XML
 
                 object o = Activator.CreateInstance(pType);
 
-
-                if (o.GetType().ImplementsInterface<IList>())
+                if (o is IList)
                 {
                     Type collectionType = pType.GetCollectionType();
 
@@ -175,7 +227,7 @@ namespace Penguin.Reflection.Serialization.XML
                 {
 
 
-                    PropertyInfo[] props = o.GetType().GetProperties();
+                    Dictionary<string, PropertyInfo> props = GetProperties(pType);
 
                     string propName;
 
@@ -186,9 +238,9 @@ namespace Penguin.Reflection.Serialization.XML
                         
                         while (lastChar != '>')
                         {
-                            StringBuilder prop = new StringBuilder();
+                            StringBuilder prop = new StringBuilder(20);
 
-                            StringBuilder val = new StringBuilder();
+                            StringBuilder val = new StringBuilder(20);
 
                             c = lastChar;
 
@@ -207,17 +259,25 @@ namespace Penguin.Reflection.Serialization.XML
 
                             c = (char)reader.Read();
 
-                            do
-                            {
-                                val.Append(c);
-                                c = (char)reader.Read();
-                            } while (c != '"');
+                            string pName = prop.ToString();
 
-                            PropertyInfo pInfo = props.FirstOrDefault(p => isNameEqual(prop.ToString(), p.Name));
 
-                            if (pInfo != null)
+                            if (props.TryGetValue(pName, out PropertyInfo pInfo))
                             {
+                                do
+                                {
+                                    val.Append(c);
+                                    c = (char)reader.Read();
+                                } while (c != '"');
+
                                 pInfo.SetValue(o, val.ToString().Convert(pInfo.PropertyType));
+                            }
+                            else
+                            {
+                                do
+                                {
+                                    c = (char)reader.Read();
+                                } while (c != '"');
                             }
 
                             do
@@ -243,20 +303,17 @@ namespace Penguin.Reflection.Serialization.XML
                     do
                     {
 
-                        PropertyInfo pInfo = props.FirstOrDefault(p => isNameEqual(propName, p.Name));
-
-                        if (pInfo != null)
+                        if (props.TryGetValue(propName, out PropertyInfo pInfo))
                         {
                             pInfo.SetValue(o, GetValue(pInfo.PropertyType, reader));
                         }
-
 
                         do
                         {
                             c = (char)reader.Read();
                         } while (char.IsWhiteSpace(c));
 
-                        (propName, lastChar) = GetNextPropertyName(reader);
+                        (propName, _) = GetNextPropertyName(reader);
 
 
                     } while (propName[0] != '/');
@@ -267,82 +324,24 @@ namespace Penguin.Reflection.Serialization.XML
 
             } else
             {
-                StringBuilder propValue = new StringBuilder();
+                StringBuilder propValue = new StringBuilder(20);
 
                 while(c != '<')
                 {
                     propValue.Append(c);
                     c = (char)reader.Read();
-
                 }
 
                 reader.AdvancePast('>');
 
                 return propValue.ToString().Convert(pType); 
             }
-
-            return null;
-
-        }
-
-
-
-
-        //private object DeserializeProperty(XmlElement oxe, Type t)
-        //{
-
-        //    object o = Activator.CreateInstance(t);
-
-        //    if (t.ImplementsInterface<IList>())
-        //    {
-        //        foreach (XmlElement xe in oxe.ChildNodes)
-        //        {
-        //            (o as IList).Add(GetValue(t.GetCollectionType(), xe));
-        //        }
-        //    }
-        //    else
-        //    {
-        //        PropertyInfo[] props = o.GetType().GetProperties();
-
-        //        foreach (XmlElement xe in oxe.ChildNodes)
-        //        {
-
-        //            PropertyInfo pInfo = props.FirstOrDefault(p => isNameEqual(xe.Name, p.Name));
-
-        //            if (!(pInfo is null))
-        //            {
-        //                pInfo.SetValue(o, GetValue(pInfo.PropertyType, xe));
-        //            }
-        //        }
-
-        //        if (Options.AttributesAsProperties)
-        //        {
-        //            foreach (XmlAttribute xa in oxe.Attributes)
-        //            {
-        //                PropertyInfo pInfo = props.FirstOrDefault(p => isNameEqual(xa.Name, p.Name));
-
-        //                if (!(pInfo is null))
-        //                {
-        //                    pInfo.SetValue(o, xa.Value.Convert(pInfo.PropertyType));
-        //                }
-        //            }
-        //        }
-        //    }
-
-        //    return o;
-        //}
-
-        public bool IsNullable(object obj)
-        {
-            Type t = obj.GetType();
-            return t.IsGenericType
-                && t.GetGenericTypeDefinition() == typeof(Nullable<>);
         }
 
         private void SerializeProperty(PropertyInfo PInfo, object Source, StringBuilder sb)
         {
             sb.Append($"<{PInfo.Name}>");
-            foreach (PropertyInfo pInfo in Source.GetType().GetProperties())
+            foreach (PropertyInfo pInfo in GetProperties(Source.GetType()).Values)
             {
                 object pValue = pInfo.GetValue(Source);
 
