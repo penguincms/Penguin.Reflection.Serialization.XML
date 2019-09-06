@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Penguin.Reflection.Serialization.XML</name>
+    </assembly>
+    <members>
+        <member name="T:Penguin.Reflection.Serialization.XML.XMLSerializer">
+            <summary>
+            Serializes/Deserializes XML
+            </summary>
+        </member>
+        <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.SetProperties(System.Type,System.Collections.Generic.IEnumerable{System.Reflection.PropertyInfo})">
+            <summary>
+            Defines the PropertyInfo for a given type used to map during deserialization. Should allow the Deserializer to skip properties by 
+            specifying only the properties you want deserialized
+            </summary>
+            <param name="t">The type being targeted</param>
+            <param name="properties">The properties to deserialize</param>
+        </member>
+        <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.#ctor">
+            <summary>
+            Constructs a new instance of the XML serializer with the default options
+            </summary>
+        </member>
+        <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.#ctor(Penguin.Reflection.Serialization.XML.XMLDeserializerOptions)">
+            <summary>
+            Constructs a new instance of the XML serializer with the given options
+            </summary>
+            <param name="options"></param>
+        </member>
+        <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.SerializeObject(System.Object)">
+            <summary>
+            Serializes the object to an XML string. 
+            </summary>
+            <param name="Source">The object to serialize</param>
+            <returns>The serialized object</returns>
+        </member>
+        <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.DeserializeObject``1(System.IO.TextReader)">
+            <summary>
+            Deserializes an XML stream to the requested type
+            </summary>
+            <typeparam name="T">The type to deserialize to</typeparam>
+            <param name="reader">And TextReader stream</param>
+            <returns>The deserialized object</returns>
+        </member>
+        <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.DeserializeObject``1(System.String)">
+            <summary>
+            Deserializes an XML string to the given object type
+            </summary>
+            <typeparam name="T">The type to return</typeparam>
+            <param name="Xml">The XML to deserialize</param>
+            <returns>The Deserialized object</returns>
+        </member>
+        <member name="T:Penguin.Reflection.Serialization.XML.XMLDeserializerOptions">
+            <summary>
+            Used to set the XML Deserializer options
+            </summary>
+        </member>
+        <member name="P:Penguin.Reflection.Serialization.XML.XMLDeserializerOptions.CaseSensitive">
+            <summary>
+            Nodes => Deserialization case sensitivity
+            Default: true
+            </summary>
+        </member>
+        <member name="P:Penguin.Reflection.Serialization.XML.XMLDeserializerOptions.AttributesAsProperties">
+            <summary>
+            If true, XML node attributes should be mapped to properties with corresponding names
+            Default: true
+            </summary>
+        </member>
+        <member name="P:Penguin.Reflection.Serialization.XML.XMLDeserializerOptions.StartNode">
+            <summary>
+            If the target object is a child of the XML, naming the node allows the deserializer to slice out just that child
+            </summary>
+        </member>
+    </members>
+</doc>

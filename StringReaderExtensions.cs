@@ -6,7 +6,7 @@ using System.Text;
 
 namespace Penguin.Reflection.Serialization.XML
 {
-    public static class TextReaderExtensions
+    internal static class TextReaderExtensions
     {
         public static void AdvancePast(this TextReader reader, string s)
         {

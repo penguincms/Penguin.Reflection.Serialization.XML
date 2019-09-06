@@ -11,10 +11,20 @@ using System.Xml;
 
 namespace Penguin.Reflection.Serialization.XML
 {
+
+    /// <summary>
+    /// Serializes/Deserializes XML
+    /// </summary>
     public class XMLSerializer
     {
         Dictionary<Type, Dictionary<string, PropertyInfo>> PropertyCache { get; set; } = new Dictionary<Type, Dictionary<string, PropertyInfo>>();
         
+        /// <summary>
+        /// Defines the PropertyInfo for a given type used to map during deserialization. Should allow the Deserializer to skip properties by 
+        /// specifying only the properties you want deserialized
+        /// </summary>
+        /// <param name="t">The type being targeted</param>
+        /// <param name="properties">The properties to deserialize</param>
         public void SetProperties(Type t, IEnumerable<PropertyInfo> properties)
         {
             if (PropertyCache.ContainsKey(t))
@@ -58,16 +68,32 @@ namespace Penguin.Reflection.Serialization.XML
             }
         }
         XMLDeserializerOptions Options { get; set; }
+
+        /// <summary>
+        /// Constructs a new instance of the XML serializer with the default options
+        /// </summary>
         public XMLSerializer() : this(new XMLDeserializerOptions())
         {
         }
 
+        /// <summary>
+        /// Constructs a new instance of the XML serializer with the given options
+        /// </summary>
+        /// <param name="options"></param>
         public XMLSerializer(XMLDeserializerOptions options)
         {
             Options = options;
         }
 
-        public string SerializeObject(object Source, StringBuilder sb = null)
+        /// <summary>
+        /// Serializes the object to an XML string. 
+        /// </summary>
+        /// <param name="Source">The object to serialize</param>
+        /// <returns>The serialized object</returns>
+        public string SerializeObject(object Source) => SerializeObject(new StringBuilder());
+
+
+        internal string SerializeObject(object Source, StringBuilder sb)
         {
 
             if (sb is null)
@@ -88,7 +114,7 @@ namespace Penguin.Reflection.Serialization.XML
             return sb.ToString();
         }
 
-        public  (string propName, char lastChar) GetNextPropertyName(TextReader reader)
+        internal  (string propName, char lastChar) GetNextPropertyName(TextReader reader)
         {
             StringBuilder s = new StringBuilder(20);
 
@@ -113,6 +139,12 @@ namespace Penguin.Reflection.Serialization.XML
             return (s.ToString(), c);
         }
 
+        /// <summary>
+        /// Deserializes an XML stream to the requested type
+        /// </summary>
+        /// <typeparam name="T">The type to deserialize to</typeparam>
+        /// <param name="reader">And TextReader stream</param>
+        /// <returns>The deserialized object</returns>
         public T DeserializeObject<T>(TextReader reader) where T : class
         {
             if((reader as System.IO.StreamReader).BaseStream.Position == (reader as System.IO.StreamReader).BaseStream.Length){
@@ -170,7 +202,12 @@ namespace Penguin.Reflection.Serialization.XML
 
             return null;
         }
-        //XML Serializers suck. 
+        /// <summary>
+        /// Deserializes an XML string to the given object type
+        /// </summary>
+        /// <typeparam name="T">The type to return</typeparam>
+        /// <param name="Xml">The XML to deserialize</param>
+        /// <returns>The Deserialized object</returns>
         public T DeserializeObject<T>(string Xml) where T : class
         {
             StringReader reader = new StringReader(Xml);
