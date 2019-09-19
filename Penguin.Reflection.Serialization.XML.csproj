@@ -1,37 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
+  <Import Project="Penguin.Projects.Shared\Penguin.Projects.Shared.csproj" />
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-    <PackageLicenseFile>License.txt</PackageLicenseFile>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PackageProjectUrl>https://github.com/penguincms/Penguin.Reflection.Serialization.XML</PackageProjectUrl>
-    <PackageIconUrl>http://www.penguinms.com/client/images/pg.png</PackageIconUrl>
-    <Version>1.0.0</Version>
-	<IncludeSymbols>true</IncludeSymbols>    
-<SymbolPackageFormat>snupkg</SymbolPackageFormat>
-
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.0.01</Version>
     <Description>Quick and dirty XML serializer/Deserializer</Description>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Penguin.Reflection.Extensions" Version="2.0.14" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="License.txt">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-  </ItemGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <WarningsAsErrors>NU1605, CS1591</WarningsAsErrors>
-    <DocumentationFile>Penguin.Reflection.Serialization.XML.xml</DocumentationFile>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DebugType>full</DebugType>
-    <DocumentationFile>Penguin.Reflection.Serialization.XML.xml</DocumentationFile>
-  </PropertyGroup>
 </Project>
