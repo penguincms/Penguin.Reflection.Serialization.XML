@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <doc>
     <assembly>
-        <name>Penguin.Reflection.Serialization.XML.Local</name>
+        <name>Penguin.Reflection.Serialization.XML</name>
     </assembly>
     <members>
         <member name="T:Penguin.Reflection.Serialization.XML.XMLSerializer">
