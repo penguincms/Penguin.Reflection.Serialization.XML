@@ -5,8 +5,10 @@
     <Version>1.0.1</Version>
     <Description>Quick and dirty XML serializer/Deserializer</Description>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>Penguin.Reflection.Serialization.XML</AssemblyName>
+    <RootNamespace>Penguin.Reflection.Serialization.XML</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Penguin.Reflection.Extensions" Version="3.0.5-T9M1HHH" />
+    <PackageReference Include="Penguin.Reflection.Extensions" Version="3.0.5-T9M2XAX" />
   </ItemGroup>
 </Project>
