@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Penguin.Reflection.Serialization.XML.Exceptions;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -23,11 +24,16 @@ namespace Penguin.Reflection.Serialization.XML
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]
         public static void AdvancePast(this TextReader reader, char c)
         {
-            while(reader.Read() != c)
+            int x;
+            while((x = reader.Read()) != c)
             {
-
+                if(x == -1)
+                {
+                    throw new CharacterNotFoundException("End of stream reached without matching character", c);
+                }
             }
         }
     }

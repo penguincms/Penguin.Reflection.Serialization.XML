@@ -1,4 +1,5 @@
 ﻿using Penguin.Reflection.Extensions;
+using Penguin.Reflection.Serialization.XML.Exceptions;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -124,15 +125,7 @@ namespace Penguin.Reflection.Serialization.XML
 
             while (!char.IsWhiteSpace(c) && c != '>')
             {
-                if (c == '-')
-                {
-                    s.Append('_');
-                }
-                else
-                {
-                    s.Append(c);
-                }
-
+                s.Append(c);
                 c = (char)reader.Read();
             }
 
@@ -148,24 +141,46 @@ namespace Penguin.Reflection.Serialization.XML
         /// <returns>The deserialized object</returns>
         public T DeserializeObject<T>(TextReader reader) where T : class
         {
+            long startPos = -1;
+            StreamReader startReader = null;
+
             if (reader is StreamReader sReader)
             {
+                startReader = sReader;
                 if (sReader.BaseStream.Position == sReader.BaseStream.Length)
                 {
                     return null;
                 }
+
+                startPos = sReader.BaseStream.Position;
             }
 
-
-            if (Options.StartNode != null)
+            try
             {
-                reader.AdvancePast("<" + Options.StartNode);
+                if (Options.StartNode != null)
+                {
+                    reader.AdvancePast("<" + Options.StartNode);
+                }
+
+                reader.AdvancePast(">");
+
+
+                return GetValue(typeof(T), reader, '>') as T;
+            } catch (CharacterNotFoundException cex) when (startPos != -1 && startReader != null && startReader.BaseStream.CanSeek) 
+            {
+                startReader.BaseStream.Seek(startPos, SeekOrigin.Begin);
+
+                StringBuilder exceptionBuilder = new StringBuilder();
+                char c = (char)startReader.Read();
+                
+                while((c = (char)startReader.Read()) != -1 && exceptionBuilder.Length < 5000)
+                {
+                    exceptionBuilder.Append(c);
+                }
+                cex.XmlString = exceptionBuilder.ToString();
+
+                throw;
             }
-
-            reader.AdvancePast(">");
-
-
-            return GetValue(typeof(T), reader, '>') as T;
         }
         /// <summary>
         /// Deserializes an XML string to the given object type
@@ -184,9 +199,14 @@ namespace Penguin.Reflection.Serialization.XML
         {
             char c = lastChar;
 
-
-            if (pType == typeof(string) || pType.IsValueType)
+            if (pType.IsPrimitive || pType == typeof(string) || pType == typeof(decimal) || pType == typeof(DateTime))
             {
+
+                if(lastChar != '>')
+                {
+                    reader.AdvancePast('>');
+                }
+
                 c = (char)reader.Read();
 
                 StringBuilder toReturn = new StringBuilder(25);
@@ -208,15 +228,25 @@ namespace Penguin.Reflection.Serialization.XML
                 c = (char)reader.Read();
             }
 
+            lastChar = c;
+
             object o = Activator.CreateInstance(pType);
 
             if (o is IList)
             {
                 Type collectionType = pType.GetCollectionType();
-
+                string propName;
                 do
                 {
-                    (o as IList).Add(GetValue(collectionType, reader, c));
+                    if (c != '<')
+                    {
+                        reader.AdvancePast('<');
+                    }
+
+                    
+                    (propName, lastChar) = GetNextPropertyName(reader);
+
+                    (o as IList).Add(GetValue(collectionType, reader, lastChar));
 
                     do
                     {
@@ -229,13 +259,7 @@ namespace Penguin.Reflection.Serialization.XML
             }
             else
             {
-                reader.AdvancePast("<");
-
                 Dictionary<string, PropertyInfo> props = GetProperties(pType);
-
-                string propName;
-
-                (propName, lastChar) = GetNextPropertyName(reader);
 
                 if (Options.AttributesAsProperties)
                 {
@@ -299,11 +323,18 @@ namespace Penguin.Reflection.Serialization.XML
                     }
                 }
 
+                while(lastChar != '<')
+                {
+                    lastChar = (char)reader.Read();
+                }
 
+                string propName;
+
+                (propName, lastChar) = GetNextPropertyName(reader);
 
                 do
                 {
-                    bool selfClosing = false;
+                    bool selfClosing = propName[propName.Length - 1] == '/';
 
                     while (lastChar != '>')
                     {
@@ -324,9 +355,9 @@ namespace Penguin.Reflection.Serialization.XML
                         continue;
                     }
 
-                    if (props.TryGetValue(propName, out PropertyInfo pInfo))
+                    if (props.TryGetValue(propName.Replace("-", "_"), out PropertyInfo pInfo))
                     {
-                        pInfo.SetValue(o, GetValue(pInfo.PropertyType, reader));
+                        pInfo.SetValue(o, GetValue(pInfo.PropertyType, reader, lastChar));
                     } else
                     {
                         reader.AdvancePast(propName + ">");
