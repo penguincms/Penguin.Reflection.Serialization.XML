@@ -9,14 +9,6 @@
             Serializes/Deserializes XML
             </summary>
         </member>
-        <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.SetProperties(System.Type,System.Collections.Generic.IEnumerable{System.Reflection.PropertyInfo})">
-            <summary>
-            Defines the PropertyInfo for a given type used to map during deserialization. Should allow the Deserializer to skip properties by 
-            specifying only the properties you want deserialized
-            </summary>
-            <param name="t">The type being targeted</param>
-            <param name="properties">The properties to deserialize</param>
-        </member>
         <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.#ctor">
             <summary>
             Constructs a new instance of the XML serializer with the default options
@@ -27,13 +19,6 @@
             Constructs a new instance of the XML serializer with the given options
             </summary>
             <param name="options"></param>
-        </member>
-        <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.SerializeObject(System.Object)">
-            <summary>
-            Serializes the object to an XML string. 
-            </summary>
-            <param name="Source">The object to serialize</param>
-            <returns>The serialized object</returns>
         </member>
         <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.DeserializeObject``1(System.IO.TextReader)">
             <summary>
@@ -50,6 +35,21 @@
             <typeparam name="T">The type to return</typeparam>
             <param name="Xml">The XML to deserialize</param>
             <returns>The Deserialized object</returns>
+        </member>
+        <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.SerializeObject(System.Object)">
+            <summary>
+            Serializes the object to an XML string.
+            </summary>
+            <param name="Source">The object to serialize</param>
+            <returns>The serialized object</returns>
+        </member>
+        <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.SetProperties(System.Type,System.Collections.Generic.IEnumerable{System.Reflection.PropertyInfo})">
+            <summary>
+            Defines the PropertyInfo for a given type used to map during deserialization. Should allow the Deserializer to skip properties by
+            specifying only the properties you want deserialized
+            </summary>
+            <param name="t">The type being targeted</param>
+            <param name="properties">The properties to deserialize</param>
         </member>
         <member name="T:Penguin.Reflection.Serialization.XML.XMLDeserializerOptions">
             <summary>

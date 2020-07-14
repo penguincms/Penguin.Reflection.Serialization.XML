@@ -12,64 +12,13 @@ using System.Xml;
 
 namespace Penguin.Reflection.Serialization.XML
 {
-
     /// <summary>
     /// Serializes/Deserializes XML
     /// </summary>
     public class XMLSerializer
     {
-        Dictionary<Type, Dictionary<string, PropertyInfo>> PropertyCache { get; set; } = new Dictionary<Type, Dictionary<string, PropertyInfo>>();
-
-        /// <summary>
-        /// Defines the PropertyInfo for a given type used to map during deserialization. Should allow the Deserializer to skip properties by 
-        /// specifying only the properties you want deserialized
-        /// </summary>
-        /// <param name="t">The type being targeted</param>
-        /// <param name="properties">The properties to deserialize</param>
-        public void SetProperties(Type t, IEnumerable<PropertyInfo> properties)
-        {
-            if (PropertyCache.ContainsKey(t))
-            {
-                PropertyCache.Remove(t);
-            }
-
-            _SetProperties(t, properties);
-        }
-
-        private void _SetProperties(Type t, IEnumerable<PropertyInfo> properties)
-        {
-            Dictionary<string, PropertyInfo> props;
-
-            if (Options.CaseSensitive)
-            {
-                props = new Dictionary<string, PropertyInfo>();
-            }
-            else
-            {
-                props = new Dictionary<string, PropertyInfo>(StringComparer.OrdinalIgnoreCase);
-            }
-
-            foreach (PropertyInfo p in properties)
-            {
-                props.Add(p.Name, p);
-            }
-
-            PropertyCache.Add(t, props);
-        }
-
-        Dictionary<string, PropertyInfo> GetProperties(Type t)
-        {
-            if (PropertyCache.TryGetValue(t, out Dictionary<string, PropertyInfo> props))
-            {
-                return props;
-            }
-            else
-            {
-                _SetProperties(t, t.GetProperties());
-                return PropertyCache[t];
-            }
-        }
-        XMLDeserializerOptions Options { get; set; }
+        private XMLDeserializerOptions Options { get; set; }
+        private Dictionary<Type, Dictionary<string, PropertyInfo>> PropertyCache { get; set; } = new Dictionary<Type, Dictionary<string, PropertyInfo>>();
 
         /// <summary>
         /// Constructs a new instance of the XML serializer with the default options
@@ -88,52 +37,6 @@ namespace Penguin.Reflection.Serialization.XML
         }
 
         /// <summary>
-        /// Serializes the object to an XML string. 
-        /// </summary>
-        /// <param name="Source">The object to serialize</param>
-        /// <returns>The serialized object</returns>
-        public string SerializeObject(object Source) => SerializeObject(new StringBuilder());
-
-
-        internal string SerializeObject(object Source, StringBuilder sb)
-        {
-
-            if (sb is null)
-            {
-                sb = new StringBuilder(200);
-            }
-
-            foreach (PropertyInfo pInfo in Source.GetType().GetProperties())
-            {
-                object pValue = pInfo.GetValue(Source);
-                if (pValue is null)
-                {
-                    continue;
-                }
-                SerializeProperty(pInfo, pValue, sb);
-            }
-
-            return sb.ToString();
-        }
-
-        internal (string propName, char lastChar) GetNextPropertyName(TextReader reader)
-        {
-            StringBuilder s = new StringBuilder(20);
-
-            char c = (char)reader.Read();
-
-
-            while (!char.IsWhiteSpace(c) && c != '>')
-            {
-                s.Append(c);
-                c = (char)reader.Read();
-            }
-
-
-            return (s.ToString(), c);
-        }
-
-        /// <summary>
         /// Deserializes an XML stream to the requested type
         /// </summary>
         /// <typeparam name="T">The type to deserialize to</typeparam>
@@ -141,6 +44,11 @@ namespace Penguin.Reflection.Serialization.XML
         /// <returns>The deserialized object</returns>
         public T DeserializeObject<T>(TextReader reader) where T : class
         {
+            if (reader is null)
+            {
+                throw new ArgumentNullException(nameof(reader));
+            }
+
             long startPos = -1;
             StreamReader startReader = null;
 
@@ -164,16 +72,16 @@ namespace Penguin.Reflection.Serialization.XML
 
                 reader.AdvancePast(">");
 
-
                 return GetValue(typeof(T), reader, '>') as T;
-            } catch (CharacterNotFoundException cex) when (startPos != -1 && startReader != null && startReader.BaseStream.CanSeek) 
+            }
+            catch (CharacterNotFoundException cex) when (startPos != -1 && startReader != null && startReader.BaseStream.CanSeek)
             {
                 startReader.BaseStream.Seek(startPos, SeekOrigin.Begin);
 
                 StringBuilder exceptionBuilder = new StringBuilder();
                 char c = (char)startReader.Read();
-                
-                while((c = (char)startReader.Read()) != -1 && exceptionBuilder.Length < 5000)
+
+                while ((c = (char)startReader.Read()) != -1 && exceptionBuilder.Length < 5000)
                 {
                     exceptionBuilder.Append(c);
                 }
@@ -182,6 +90,7 @@ namespace Penguin.Reflection.Serialization.XML
                 throw;
             }
         }
+
         /// <summary>
         /// Deserializes an XML string to the given object type
         /// </summary>
@@ -195,14 +104,110 @@ namespace Penguin.Reflection.Serialization.XML
             return DeserializeObject<T>(reader);
         }
 
+        /// <summary>
+        /// Serializes the object to an XML string.
+        /// </summary>
+        /// <param name="Source">The object to serialize</param>
+        /// <returns>The serialized object</returns>
+        public string SerializeObject(object Source) => SerializeObject(new StringBuilder());
+
+        /// <summary>
+        /// Defines the PropertyInfo for a given type used to map during deserialization. Should allow the Deserializer to skip properties by
+        /// specifying only the properties you want deserialized
+        /// </summary>
+        /// <param name="t">The type being targeted</param>
+        /// <param name="properties">The properties to deserialize</param>
+        public void SetProperties(Type t, IEnumerable<PropertyInfo> properties)
+        {
+            if (PropertyCache.ContainsKey(t))
+            {
+                PropertyCache.Remove(t);
+            }
+
+            if (properties is null)
+            {
+                throw new ArgumentNullException(nameof(properties));
+            }
+
+            _SetProperties(t, properties);
+        }
+
+        internal (string propName, char lastChar) GetNextPropertyName(TextReader reader)
+        {
+            StringBuilder s = new StringBuilder(20);
+
+            char c = (char)reader.Read();
+
+            while (!char.IsWhiteSpace(c) && c != '>')
+            {
+                s.Append(c);
+                c = (char)reader.Read();
+            }
+
+            return (s.ToString(), c);
+        }
+
+        internal string SerializeObject(object Source, StringBuilder sb)
+        {
+            if (sb is null)
+            {
+                sb = new StringBuilder(200);
+            }
+
+            foreach (PropertyInfo pInfo in Source.GetType().GetProperties())
+            {
+                object pValue = pInfo.GetValue(Source);
+                if (pValue is null)
+                {
+                    continue;
+                }
+                SerializeProperty(pInfo, pValue, sb);
+            }
+
+            return sb.ToString();
+        }
+
+        private void _SetProperties(Type t, IEnumerable<PropertyInfo> properties)
+        {
+            Dictionary<string, PropertyInfo> props;
+
+            if (Options.CaseSensitive)
+            {
+                props = new Dictionary<string, PropertyInfo>();
+            }
+            else
+            {
+                props = new Dictionary<string, PropertyInfo>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            foreach (PropertyInfo p in properties)
+            {
+                props.Add(p.Name, p);
+            }
+
+            PropertyCache.Add(t, props);
+        }
+
+        private Dictionary<string, PropertyInfo> GetProperties(Type t)
+        {
+            if (PropertyCache.TryGetValue(t, out Dictionary<string, PropertyInfo> props))
+            {
+                return props;
+            }
+            else
+            {
+                _SetProperties(t, t.GetProperties());
+                return PropertyCache[t];
+            }
+        }
+
         private object GetValue(Type pType, TextReader reader, char lastChar = ' ')
         {
             char c = lastChar;
 
             if (pType.IsPrimitive || pType == typeof(string) || pType == typeof(decimal) || pType == typeof(DateTime))
             {
-
-                if(lastChar != '>')
+                if (lastChar != '>')
                 {
                     reader.AdvancePast('>');
                 }
@@ -220,7 +225,6 @@ namespace Penguin.Reflection.Serialization.XML
                 reader.AdvancePast('>');
 
                 return toReturn.ToString().Convert(pType);
-
             }
 
             while (char.IsWhiteSpace(c))
@@ -243,7 +247,6 @@ namespace Penguin.Reflection.Serialization.XML
                         reader.AdvancePast('<');
                     }
 
-                    
                     (propName, lastChar) = GetNextPropertyName(reader);
 
                     (o as IList).Add(GetValue(collectionType, reader, lastChar));
@@ -252,7 +255,6 @@ namespace Penguin.Reflection.Serialization.XML
                     {
                         c = (char)reader.Read();
                     } while (char.IsWhiteSpace(c));
-
                 } while ((char)reader.Peek() != '/');
 
                 reader.AdvancePast('>');
@@ -263,7 +265,6 @@ namespace Penguin.Reflection.Serialization.XML
 
                 if (Options.AttributesAsProperties)
                 {
-
                     while (lastChar != '>')
                     {
                         StringBuilder prop = new StringBuilder(20);
@@ -288,7 +289,6 @@ namespace Penguin.Reflection.Serialization.XML
                         c = (char)reader.Read();
 
                         string pName = prop.ToString();
-
 
                         if (props.TryGetValue(pName, out PropertyInfo pInfo))
                         {
@@ -323,7 +323,7 @@ namespace Penguin.Reflection.Serialization.XML
                     }
                 }
 
-                while(lastChar != '<')
+                while (lastChar != '<')
                 {
                     lastChar = (char)reader.Read();
                 }
@@ -346,7 +346,7 @@ namespace Penguin.Reflection.Serialization.XML
                         }
                     }
 
-                    if(selfClosing)
+                    if (selfClosing)
                     {
                         reader.AdvancePast("<");
 
@@ -358,7 +358,8 @@ namespace Penguin.Reflection.Serialization.XML
                     if (props.TryGetValue(propName.Replace("-", "_"), out PropertyInfo pInfo))
                     {
                         pInfo.SetValue(o, GetValue(pInfo.PropertyType, reader, lastChar));
-                    } else
+                    }
+                    else
                     {
                         reader.AdvancePast(propName + ">");
                     }
@@ -368,20 +369,16 @@ namespace Penguin.Reflection.Serialization.XML
                         c = (char)reader.Read();
                     } while (char.IsWhiteSpace(c));
 
-                    if(c == '/')
+                    if (c == '/')
                     {
                         c = (char)reader.Read();
                     }
 
                     (propName, lastChar) = GetNextPropertyName(reader);
-
-
                 } while (propName[0] != '/');
-
             }
 
             return o;
-
         }
 
         private void SerializeProperty(PropertyInfo PInfo, object Source, StringBuilder sb)

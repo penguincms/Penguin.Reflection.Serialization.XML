@@ -10,6 +10,6 @@
     <DocumentationFile>Penguin.Reflection.Serialization.XML.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Penguin.Reflection.Extensions" Version="5.0.0" />
+    <PackageReference Include="Penguin.Reflection.Extensions" Version="5.0.1-T9ZCSSJ" />
   </ItemGroup>
 </Project>
