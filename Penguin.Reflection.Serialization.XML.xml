@@ -14,6 +14,13 @@
             Constructs a new instance of the XML serializer with the default options
             </summary>
         </member>
+        <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.Serialize(System.Object)">
+            <summary>
+            Static serialization method
+            </summary>
+            <param name="o">Object to serialize</param>
+            <returns>Serialized object</returns>
+        </member>
         <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.#ctor(Penguin.Reflection.Serialization.XML.XMLDeserializerOptions)">
             <summary>
             Constructs a new instance of the XML serializer with the given options
@@ -40,7 +47,7 @@
             <summary>
             Serializes the object to an XML string.
             </summary>
-            <param name="Source">The object to serialize</param>
+            <param name="source">The object to serialize</param>
             <returns>The serialized object</returns>
         </member>
         <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.SetProperties(System.Type,System.Collections.Generic.IEnumerable{System.Reflection.PropertyInfo})">
@@ -56,15 +63,15 @@
             Used to set the XML Deserializer options
             </summary>
         </member>
-        <member name="P:Penguin.Reflection.Serialization.XML.XMLDeserializerOptions.CaseSensitive">
-            <summary>
-            Nodes => Deserialization case sensitivity
-            Default: true
-            </summary>
-        </member>
         <member name="P:Penguin.Reflection.Serialization.XML.XMLDeserializerOptions.AttributesAsProperties">
             <summary>
             If true, XML node attributes should be mapped to properties with corresponding names
+            Default: true
+            </summary>
+        </member>
+        <member name="P:Penguin.Reflection.Serialization.XML.XMLDeserializerOptions.CaseSensitive">
+            <summary>
+            Nodes => Deserialization case sensitivity
             Default: true
             </summary>
         </member>
