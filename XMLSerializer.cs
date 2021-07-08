@@ -1,9 +1,11 @@
 ﻿using Penguin.Reflection.Extensions;
 using Penguin.Reflection.Serialization.XML.Exceptions;
 using Penguin.Reflection.Serialization.XML.Extensions;
+using Penguin.Reflection.Serialization.XML.Interfaces;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -16,7 +18,7 @@ namespace Penguin.Reflection.Serialization.XML
     public class XMLSerializer
     {
         private XMLDeserializerOptions Options { get; set; }
-        private Dictionary<Type, Dictionary<string, PropertyInfo>> PropertyCache { get; set; } = new Dictionary<Type, Dictionary<string, PropertyInfo>>();
+        private Dictionary<Type, Dictionary<string, IPropertyInfo>> PropertyCache { get; set; } = new Dictionary<Type, Dictionary<string, IPropertyInfo>>();
 
         /// <summary>
         /// Constructs a new instance of the XML serializer with the default options
@@ -26,17 +28,17 @@ namespace Penguin.Reflection.Serialization.XML
         }
 
         /// <summary>
+        /// Constructs a new instance of the XML serializer with the given options
+        /// </summary>
+        /// <param name="options"></param>
+        public XMLSerializer(XMLDeserializerOptions options) => this.Options = options;
+
+        /// <summary>
         /// Static serialization method
         /// </summary>
         /// <param name="o">Object to serialize</param>
         /// <returns>Serialized object</returns>
         public static string Serialize(object o) => new XMLSerializer().SerializeObject(o);
-
-        /// <summary>
-        /// Constructs a new instance of the XML serializer with the given options
-        /// </summary>
-        /// <param name="options"></param>
-        public XMLSerializer(XMLDeserializerOptions options) => this.Options = options;
 
         /// <summary>
         /// Deserializes an XML stream to the requested type
@@ -156,7 +158,7 @@ namespace Penguin.Reflection.Serialization.XML
                 sb = new StringBuilder(200);
             }
 
-            foreach (PropertyInfo pInfo in Source.GetType().GetProperties())
+            foreach (IPropertyInfo pInfo in this.GetProperties(Source).Values)
             {
                 object pValue = pInfo.GetValue(Source);
 
@@ -173,28 +175,51 @@ namespace Penguin.Reflection.Serialization.XML
 
         private void _SetProperties(Type t, IEnumerable<PropertyInfo> properties)
         {
-            Dictionary<string, PropertyInfo> props = this.Options.CaseSensitive
-                ? new Dictionary<string, PropertyInfo>()
-                : new Dictionary<string, PropertyInfo>(StringComparer.OrdinalIgnoreCase);
+            Dictionary<string, IPropertyInfo> props = this.Options.CaseSensitive
+                ? new Dictionary<string, IPropertyInfo>()
+                : new Dictionary<string, IPropertyInfo>(StringComparer.OrdinalIgnoreCase);
 
             foreach (PropertyInfo p in properties)
             {
-                props.Add(p.GetPropertyName(), p);
+                props.Add(p.GetPropertyName(), new SystemPropertyInfo(p));
             }
 
             this.PropertyCache.Add(t, props);
         }
 
-        private Dictionary<string, PropertyInfo> GetProperties(Type t)
+        private Dictionary<string, IPropertyInfo> GetProperties(object propertySource)
         {
-            if (this.PropertyCache.TryGetValue(t, out Dictionary<string, PropertyInfo> props))
+            if (propertySource is null)
             {
-                return props;
+                throw new ArgumentNullException(nameof(propertySource));
+            }
+
+            if (propertySource is ExpandoObject eo)
+            {
+                Dictionary<string, IPropertyInfo> toReturn = new Dictionary<string, IPropertyInfo>();
+
+                IDictionary<string, object> expandoDict = (IDictionary<string, object>)eo;
+
+                foreach (KeyValuePair<string, object> kvp in expandoDict)
+                {
+                    toReturn.Add(kvp.Key, new ExpandoPropertyInfo(kvp));
+                }
+
+                return toReturn;
             }
             else
             {
-                this._SetProperties(t, t.GetProperties());
-                return this.PropertyCache[t];
+                Type t = propertySource.GetType();
+
+                if (this.PropertyCache.TryGetValue(t, out Dictionary<string, IPropertyInfo> props))
+                {
+                    return props;
+                }
+                else
+                {
+                    this._SetProperties(t, t.GetProperties());
+                    return this.PropertyCache[t];
+                }
             }
         }
 
@@ -257,7 +282,7 @@ namespace Penguin.Reflection.Serialization.XML
             }
             else
             {
-                Dictionary<string, PropertyInfo> props = this.GetProperties(pType);
+                Dictionary<string, IPropertyInfo> props = this.GetProperties(o);
 
                 if (this.Options.AttributesAsProperties)
                 {
@@ -286,7 +311,7 @@ namespace Penguin.Reflection.Serialization.XML
 
                         string pName = prop.ToString();
 
-                        if (props.TryGetValue(pName, out PropertyInfo pInfo))
+                        if (props.TryGetValue(pName, out IPropertyInfo pInfo))
                         {
                             do
                             {
@@ -351,7 +376,7 @@ namespace Penguin.Reflection.Serialization.XML
                         continue;
                     }
 
-                    if (props.TryGetValue(propName.Replace("-", "_"), out PropertyInfo pInfo))
+                    if (props.TryGetValue(propName.Replace("-", "_"), out IPropertyInfo pInfo))
                     {
                         pInfo.SetValue(o, this.GetValue(pInfo.PropertyType, reader, lastChar));
                     }
@@ -377,10 +402,10 @@ namespace Penguin.Reflection.Serialization.XML
             return o;
         }
 
-        private void SerializeProperty(PropertyInfo PInfo, object Source, StringBuilder sb)
+        private void SerializeProperty(IPropertyInfo PInfo, object Source, StringBuilder sb)
         {
             sb.Append($"<{PInfo.GetPropertyName()}>");
-            foreach (PropertyInfo pInfo in this.GetProperties(Source.GetType()).Values)
+            foreach (IPropertyInfo pInfo in this.GetProperties(Source).Values)
             {
                 object pValue = pInfo.GetValue(Source);
 
@@ -401,7 +426,7 @@ namespace Penguin.Reflection.Serialization.XML
                 if (pValue is Enum)
                 {
                     sb.Append($"<{pInfo.GetPropertyName()}>");
-                    sb.Append(((int)pValue).ToString());
+                    sb.Append((int)pValue);
                     sb.Append($"</{pInfo.GetPropertyName()}>");
                 }
                 else if (pInfo.PropertyType == typeof(string))

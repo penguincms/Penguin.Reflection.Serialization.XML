@@ -14,18 +14,18 @@
             Constructs a new instance of the XML serializer with the default options
             </summary>
         </member>
+        <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.#ctor(Penguin.Reflection.Serialization.XML.XMLDeserializerOptions)">
+            <summary>
+            Constructs a new instance of the XML serializer with the given options
+            </summary>
+            <param name="options"></param>
+        </member>
         <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.Serialize(System.Object)">
             <summary>
             Static serialization method
             </summary>
             <param name="o">Object to serialize</param>
             <returns>Serialized object</returns>
-        </member>
-        <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.#ctor(Penguin.Reflection.Serialization.XML.XMLDeserializerOptions)">
-            <summary>
-            Constructs a new instance of the XML serializer with the given options
-            </summary>
-            <param name="options"></param>
         </member>
         <member name="M:Penguin.Reflection.Serialization.XML.XMLSerializer.DeserializeObject``1(System.IO.TextReader)">
             <summary>
