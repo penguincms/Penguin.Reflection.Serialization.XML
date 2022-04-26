@@ -4,12 +4,12 @@
     <PackageProjectUrl>https://github.com/PenguinCMS/Penguin.Reflection.Serialization.XML</PackageProjectUrl>
     <Version>5.0.5</Version>
     <Description>Quick and dirty XML serializer/Deserializer</Description>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net5.0</TargetFrameworks>
     <AssemblyName>Penguin.Reflection.Serialization.XML</AssemblyName>
     <RootNamespace>Penguin.Reflection.Serialization.XML</RootNamespace>
     <DocumentationFile>Penguin.Reflection.Serialization.XML.xml</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Penguin.Reflection.Extensions" Version="5.0.6-TAVV3GD" />
+    <PackageReference Include="Penguin.Reflection.Extensions" Version="5.0.6-TAW5FE4" />
   </ItemGroup>
 </Project>
