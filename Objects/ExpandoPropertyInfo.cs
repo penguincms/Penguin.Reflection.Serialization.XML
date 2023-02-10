@@ -6,6 +6,7 @@ namespace Penguin.Reflection.Serialization.XML.Interfaces
     internal class ExpandoPropertyInfo : IPropertyInfo
     {
         public string Name { get; private set; }
+
         public Type PropertyType { get; }
 
         public ExpandoPropertyInfo(KeyValuePair<string, object> kvp)

@@ -18,6 +18,7 @@ namespace Penguin.Reflection.Serialization.XML
     public class XMLSerializer
     {
         private XMLDeserializerOptions Options { get; set; }
+
         private Dictionary<Type, Dictionary<string, IPropertyInfo>> PropertyCache { get; set; } = new Dictionary<Type, Dictionary<string, IPropertyInfo>>();
 
         /// <summary>

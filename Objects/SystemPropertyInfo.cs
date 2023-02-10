@@ -6,6 +6,7 @@ namespace Penguin.Reflection.Serialization.XML.Interfaces
     internal class SystemPropertyInfo : IPropertyInfo
     {
         private readonly PropertyInfo PropertyInfo;
+
         public string Name => this.PropertyInfo.Name;
 
         public Type PropertyType => this.PropertyInfo.PropertyType;
