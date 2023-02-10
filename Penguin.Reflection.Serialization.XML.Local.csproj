@@ -4,7 +4,7 @@
     <PackageProjectUrl>https://github.com/PenguinCms/Penguin.Reflection.Serialization.XML</PackageProjectUrl>
     <Version>5.0.5</Version>
     <Description>Quick and dirty XML serializer/Deserializer</Description>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net5.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1;net7.0</TargetFrameworks>
     <AssemblyName>Penguin.Reflection.Serialization.XML</AssemblyName>
     <RootNamespace>Penguin.Reflection.Serialization.XML</RootNamespace>
     <DocumentationFile>Penguin.Reflection.Serialization.XML.xml</DocumentationFile>
