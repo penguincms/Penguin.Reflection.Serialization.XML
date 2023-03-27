@@ -12,6 +12,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Loxifi.StringConvert" Version="0.1.0" />
-    <PackageReference Include="Penguin.Reflection.Extensions" Version="5.2.0" />
+    <PackageReference Include="Penguin.Reflection.Extensions" Version="5.4.0" />
   </ItemGroup>
 </Project>
