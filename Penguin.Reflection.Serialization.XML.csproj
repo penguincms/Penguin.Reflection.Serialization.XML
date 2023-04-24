@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="Penguin.Projects.Shared\Penguin.Projects.Shared.csproj" />
   <PropertyGroup>
-    <PackageProjectUrl>https://github.com/PenguinCms/Penguin.Reflection.Serialization.XML</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/PenguinCMS/Penguin.Reflection.Serialization.XML</PackageProjectUrl>
     <Version>5.0.5</Version>
     <Description>Quick and dirty XML serializer/Deserializer</Description>
     <TargetFrameworks>netstandard2.1;net7.0</TargetFrameworks>
@@ -12,6 +12,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Loxifi.StringConvert" Version="0.1.0" />
-    <PackageReference Include="Penguin.Reflection.Extensions" Version="5.4.0" />
+    <PackageReference Include="Penguin.Reflection.Extensions" Version="5.7.0" />
   </ItemGroup>
 </Project>
